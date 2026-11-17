@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Usage: ./create-kata <kata name>
+#
+# Scaffolds src/<name>.rs and src/<name>/tests.rs, and registers the module
+# in src/lib.rs (kept alphabetically sorted). The name is normalised to
+# snake_case, so "Find Odd", "find-odd" and "find_odd" are equivalent.
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+    echo "usage: $0 <kata name>" >&2
+    exit 1
+fi
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+src="$root/src"
+
+name="$*"
+name="$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]' | sed -E 's/[[:space:]-]+/_/g')"
+
+if [[ ! "$name" =~ ^[a-z][a-z0-9_]*$ ]]; then
+    echo "error: '$name' is not a valid Rust module name (expected [a-z][a-z0-9_]*)" >&2
+    exit 1
+fi
+
+module="$src/$name.rs"
+tests_dir="$src/$name"
+lib="$src/lib.rs"
+
+if [[ -e "$module" || -e "$tests_dir" ]] || grep -qx "pub mod $name;" "$lib"; then
+    echo "error: kata '$name' already exists" >&2
+    exit 1
+fi
+
+mkdir -p "$tests_dir"
+
+cat > "$module" <<EOF
+pub fn $name() {
+    todo!()
+}
+
+#[cfg(test)]
+mod tests;
+EOF
+
+cat > "$tests_dir/tests.rs" <<EOF
+use super::*;
+
+#[test]
+fn basic_tests() {
+    todo!()
+}
+EOF
+
+{ cat "$lib"; echo "pub mod $name;"; } | LC_ALL=C sort -u > "$lib.tmp"
+mv "$lib.tmp" "$lib"
+
+echo "Created kata '$name':"
+echo "  $module"
+echo "  $tests_dir/tests.rs"
+echo "  registered in $lib"
