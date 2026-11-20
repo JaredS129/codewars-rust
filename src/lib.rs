@@ -1,4 +1,5 @@
 pub mod alphabet_position;
+pub mod binary_slice_to_number;
 pub mod count_duplicates;
 pub mod find_odd;
 pub mod pete_the_baker;
